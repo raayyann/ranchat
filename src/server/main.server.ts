@@ -1,4 +1,5 @@
 import { createServerRemoteEvents } from "@rbxts/remoteevent";
+import { Players } from "@rbxts/services";
 import { events } from "shared/common";
 
 // Instances
@@ -17,7 +18,7 @@ event.server.queue((player) => {
 		talking.delete(player.Name);
 		return;
 	}
-	if (queue) {
+	if (queue && queue !== player) {
 		talking.set(queue.Name, player);
 		event.client.matched.fire(queue, player);
 		talking.set(player.Name, queue);
@@ -38,4 +39,15 @@ event.server.stop((player) => {
 	}
 	if (queue === player) queue = undefined;
 	event.client.stopped.fire(player);
+});
+
+// Player Disconnect Handler
+Players.PlayerRemoving.Connect((player) => {
+	if (talking.has(player.Name)) {
+		const otherPlayer = talking.get(player.Name);
+		if (otherPlayer) event.client.skipped.fire(otherPlayer, player.Name);
+		if (otherPlayer?.Name !== undefined) talking.delete(otherPlayer.Name);
+		talking.delete(player.Name);
+		return;
+	}
 });

@@ -1,6 +1,9 @@
 import { Players, Workspace } from "@rbxts/services";
+const VoiceChatService = game.GetService("VoiceChatService");
 
 Players.PlayerAdded.Connect((player) => {
+	if (!VoiceChatService.IsVoiceEnabledForUserIdAsync(player.UserId))
+		return player.Kick("You don't have voice chat enabled");
 	for (let i = 1; i <= 30; i++) {
 		const spawn = Workspace.Spawn.WaitForChild(i) as Spawn;
 		if (spawn.empty.Value) {

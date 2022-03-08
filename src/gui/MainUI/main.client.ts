@@ -11,6 +11,18 @@ const meViewport = mainUi.BG.Viewport.Me;
 const otherViewport = mainUi.BG.Viewport.Other;
 
 // Functions
+const updateResolution = () => {
+	if (mainUi.AbsoluteSize.X < mainUi.AbsoluteSize.Y) {
+		meViewport.Size = new UDim2(1, 0, 0.5, 0);
+		otherViewport.Size = new UDim2(1, 0, 0.5, 0);
+		otherViewport.Position = new UDim2(0, 0, 0.5, 0);
+	} else {
+		meViewport.Size = new UDim2(0.5, 0, 1, 0);
+		otherViewport.Size = new UDim2(0.5, 0, 1, 0);
+		otherViewport.Position = new UDim2(0.5, 0, 0, 0);
+	}
+};
+
 const getName = (plr: Player): string => {
 	return plr.DisplayName === plr.Name ? plr.Name : `${plr.DisplayName} (${plr.Name})`;
 };
@@ -23,6 +35,10 @@ const getThumbnail = (plr: Player): string => {
 	)[0];
 };
 
+// Mobile Support
+updateResolution();
+mainUi.GetPropertyChangedSignal("AbsoluteSize").Connect(updateResolution);
+
 // Set Me
 meViewport.PlayerName.Text = getName(player);
 meViewport.Image = getThumbnail(player);
@@ -30,6 +46,7 @@ meViewport.Image = getThumbnail(player);
 // Start/Next Button Handler
 menu.Next.MouseButton1Click.Connect(() => {
 	menu.Next.Visible = false;
+	menu.Stop.Visible = true;
 	menu.Next.ButtonText.Text = "Next";
 	otherViewport.Text.Text = "Matching...";
 	event.server.queue();
@@ -45,14 +62,17 @@ menu.Stop.MouseButton1Click.Connect(() => {
 event.client.matched((plr) => {
 	otherViewport.Text.Text = "";
 	menu.Next.Visible = true;
+	menu.Stop.Visible = true;
 	otherViewport.PlayerName.Text = getName(plr);
 	otherViewport.Image = getThumbnail(plr);
-	SoundService.SetListener(Enum.ListenerType.ObjectCFrame, plr.Character?.WaitForChild("Head") as Part);
+	SoundService.SetListener(Enum.ListenerType.CFrame, (plr.Character?.WaitForChild("Head") as Part)?.CFrame);
 });
 
 // Skipped Event Handler
 event.client.skipped((skipper) => {
 	otherViewport.Image = "";
+	menu.Next.Visible = false;
+	menu.Stop.Visible = true;
 	otherViewport.PlayerName.Text = "";
 	SoundService.SetListener(Enum.ListenerType.Camera);
 	otherViewport.Text.Text = "Matching...";
@@ -66,7 +86,6 @@ event.client.stopped(() => {
 	otherViewport.PlayerName.Text = "";
 	SoundService.SetListener(Enum.ListenerType.Camera);
 	menu.Next.Visible = true;
-	menu.Stop.Visible = true;
 	menu.Next.ButtonText.Text = "Start";
 	otherViewport.Text.Text = 'Press "Start" to start talk with random player';
 });
